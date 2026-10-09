@@ -4,6 +4,9 @@
 # Machine-specific R settings (points to this computer's copy of pandoc)
 .Renviron
 
+# Processed data (recreated by running scripts/02_clean.R)
+data/processed/
+
 # R and RStudio session files
 .Rhistory
 .RData

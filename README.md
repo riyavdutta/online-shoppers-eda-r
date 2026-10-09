@@ -29,9 +29,11 @@ The data are observational. Results describe associations between browsing behav
 ```
 online-shoppers-eda-r/
 ├── data/
-│   └── raw/                       Original dataset (unchanged)
+│   ├── raw/                       Original dataset (unchanged)
+│   └── processed/                 Cleaned data, created by 02_clean.R (not tracked by git)
 ├── scripts/
-│   └── 01_import_and_inspect.R    Reads the raw data and checks its structure
+│   ├── 01_import_and_inspect.R    Reads the raw data and checks its structure
+│   └── 02_clean.R                 Sets correct column types and saves the cleaned data
 ├── online-shoppers-eda-r.Rproj    RStudio project file
 └── README.md
 ```
