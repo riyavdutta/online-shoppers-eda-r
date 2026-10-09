@@ -34,6 +34,9 @@ online-shoppers-eda-r/
 ├── scripts/
 │   ├── 01_import_and_inspect.R    Reads the raw data and checks its structure
 │   └── 02_clean.R                 Sets correct column types and saves the cleaned data
+├── report/
+│   ├── analysis.Rmd               R Markdown source of the report
+│   └── analysis.md                Rendered report (readable directly on GitHub)
 ├── online-shoppers-eda-r.Rproj    RStudio project file
 └── README.md
 ```
@@ -53,6 +56,8 @@ Install the packages in R with:
 ```r
 install.packages(c("tidyverse", "broom", "car", "rmarkdown", "knitr"))
 ```
+
+To reproduce the report, open `report/analysis.Rmd` in RStudio and click **Knit**. The report runs the cleaning script itself, so it can be rendered from the raw data alone.
 
 ## Citation
 
