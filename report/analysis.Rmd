@@ -340,6 +340,20 @@ Adding page value greatly improves the fit (AUC `r round(calc_auc(model_pagevalu
 
 For these reasons, the main model is used to describe how browsing behaviour relates to purchasing. The comparison model shows that page value would make a stronger predictive model, but its estimates are harder to interpret as patterns of browsing behaviour.
 
+## 5. Conclusion
+
+This analysis examined how browsing behaviour in an online shop relates to whether a session ends in a purchase. Sessions that ended in a purchase tended to involve more product pages, and pages with lower exit rates, than sessions that did not. After accounting for the other characteristics in the model, viewing more product pages and being a new visitor were associated with higher odds of a purchase, while higher exit rates and visits close to a special day were associated with lower odds. Purchase rates also varied across months, and were highest in November.
+
+The main model separated purchase and non-purchase sessions moderately well (AUC 0.75), which suggests that session-level browsing measures capture part, but far from all, of what distinguishes sessions that end in a purchase. Including page value produced a much stronger predictive model, but because page value is partly derived from completed purchases, it adds little to understanding browsing behaviour itself.
+
+## 6. Limitations
+
+- **Observational data.** The results describe associations. They do not show that any browsing behaviour causes a purchase, and unmeasured factors, such as a visitor's prior intention to buy, may explain both browsing patterns and purchasing.
+- **One shop and one year.** The data come from a single online shop over one year, so the patterns may not apply to other shops, product types or periods. January and April are absent, and the number of sessions differs widely between months.
+- **Session-level summaries.** Each session is described by totals and averages. The order in which pages were visited, the products viewed and information about the visitors themselves are not available.
+- **No separate test data.** The models were fitted and evaluated on the same sessions, so the reported AUC values may be slightly optimistic about how well the models would perform on new data.
+- **Approximate model assumptions.** The relationships between the numeric predictors and the log-odds of purchase are close to, but not exactly, straight lines (Section 4.2), so the estimates are best read as average associations.
+
 ## References
 
 Sakar, C. and Kastro, Y. (2018). *Online Shoppers Purchasing Intention Dataset* [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C5F88Q. Licensed under CC BY 4.0.
