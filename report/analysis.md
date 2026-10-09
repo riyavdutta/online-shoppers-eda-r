@@ -14,6 +14,7 @@ Riya Dutta
   - [3.3 Visualising the differences](#33-visualising-the-differences)
 - [4. Logistic regression](#4-logistic-regression)
   - [4.1 Main model](#41-main-model)
+  - [4.2 Model checks](#42-model-checks)
 - [References](#references)
 
 ## 1. Introduction
@@ -260,18 +261,21 @@ The predictors were chosen as follows:
   calculated from completed purchases (Section 3.1). Section 4.3
   compares a model that includes it.
 
-Two predictors are rescaled so that their estimates are easier to read:
-product pages are counted in units of 10 pages, and exit rate is
-expressed in percentage points. The reference groups for the categorical
-predictors are May and returning visitors, the largest group in each
-case.
+Two predictors are transformed. Product pages enter the model on a log
+scale (base 2), so that their estimate describes each doubling of the
+number of product pages viewed; Section 4.2 shows that this matches the
+pattern in the data better than a straight-line relationship. Exit rate
+is expressed in percentage points so that its estimate is easier to
+read. The reference groups for the categorical predictors are May and
+returning visitors, the largest group in each case.
 
 ``` r
 # Prepare the data for the model
 model_data <- shoppers |>
   mutate(
-    # Product pages in units of 10, and exit rate in percentage points
-    ProductRelated_10 = ProductRelated / 10,
+    # Product pages on a log2 scale (1 is added so that sessions with 0 pages can be included),
+    # and exit rate in percentage points
+    ProductRelated_log2 = log2(ProductRelated + 1),
     ExitRates_pct = ExitRates * 100,
     # Compare each month with May, and each visitor type with returning visitors
     Month = fct_relevel(Month, "May"),
@@ -280,7 +284,7 @@ model_data <- shoppers |>
 
 # Fit the logistic regression (family = binomial means the outcome is TRUE or FALSE)
 model_main <- glm(
-  Revenue ~ Administrative + Informational + ProductRelated_10 + ExitRates_pct +
+  Revenue ~ Administrative + Informational + ProductRelated_log2 + ExitRates_pct +
     SpecialDay + Month + VisitorType + Weekend,
   family = binomial,
   data = model_data
@@ -302,23 +306,23 @@ tidy(model_main, exponentiate = TRUE, conf.int = TRUE) |>
 
 | Predictor              | Odds ratio | 95% CI lower | 95% CI upper | p-value |
 |:-----------------------|-----------:|-------------:|-------------:|:--------|
-| Administrative         |       1.01 |         1.00 |         1.03 | 0.069   |
-| Informational          |       1.06 |         1.02 |         1.10 | 0.004   |
-| ProductRelated_10      |       1.02 |         1.01 |         1.03 | \<0.001 |
-| ExitRates_pct          |       0.74 |         0.71 |         0.76 | \<0.001 |
-| SpecialDay             |       0.50 |         0.32 |         0.75 | 0.001   |
-| MonthFeb               |       0.21 |         0.05 |         0.55 | 0.007   |
-| MonthMar               |       0.75 |         0.61 |         0.91 | 0.004   |
-| MonthJun               |       0.89 |         0.58 |         1.34 | 0.603   |
-| MonthJul               |       1.29 |         0.95 |         1.73 | 0.100   |
+| Administrative         |       1.01 |         0.99 |         1.03 | 0.200   |
+| Informational          |       1.05 |         1.01 |         1.09 | 0.008   |
+| ProductRelated_log2    |       1.14 |         1.09 |         1.20 | \<0.001 |
+| ExitRates_pct          |       0.76 |         0.73 |         0.79 | \<0.001 |
+| SpecialDay             |       0.48 |         0.31 |         0.72 | \<0.001 |
+| MonthFeb               |       0.22 |         0.05 |         0.59 | 0.010   |
+| MonthMar               |       0.76 |         0.62 |         0.93 | 0.007   |
+| MonthJun               |       0.88 |         0.57 |         1.32 | 0.545   |
+| MonthJul               |       1.28 |         0.94 |         1.72 | 0.103   |
 | MonthAug               |       1.27 |         0.95 |         1.69 | 0.099   |
-| MonthSep               |       1.30 |         0.99 |         1.71 | 0.059   |
-| MonthOct               |       1.42 |         1.11 |         1.82 | 0.005   |
-| MonthNov               |       2.09 |         1.79 |         2.44 | \<0.001 |
-| MonthDec               |       0.89 |         0.73 |         1.08 | 0.255   |
-| VisitorTypeNew_Visitor |       1.42 |         1.24 |         1.62 | \<0.001 |
-| VisitorTypeOther       |       1.94 |         1.03 |         3.46 | 0.031   |
-| WeekendTRUE            |       1.04 |         0.92 |         1.17 | 0.562   |
+| MonthSep               |       1.32 |         1.00 |         1.73 | 0.048   |
+| MonthOct               |       1.44 |         1.12 |         1.84 | 0.004   |
+| MonthNov               |       2.04 |         1.75 |         2.39 | \<0.001 |
+| MonthDec               |       0.88 |         0.73 |         1.07 | 0.216   |
+| VisitorTypeNew_Visitor |       1.54 |         1.34 |         1.78 | \<0.001 |
+| VisitorTypeOther       |       2.18 |         1.16 |         3.93 | 0.012   |
+| WeekendTRUE            |       1.03 |         0.92 |         1.16 | 0.588   |
 
 An odds ratio above 1 means that higher values of the predictor (or
 membership of the group, compared with the reference group) are
@@ -331,11 +335,14 @@ Holding the other predictors constant:
 
 - **Exit rate** shows the strongest association. Each additional
   percentage point in the average exit rate of the pages visited is
-  associated with about 26% lower odds of a purchase (odds ratio 0.74).
-- **Product pages** and **informational pages** are both associated with
-  slightly higher odds of a purchase. The association for administrative
-  pages is small and its confidence interval includes 1.
-- **New visitors** had about 42% higher odds of a purchase than
+  associated with about 24% lower odds of a purchase (odds ratio 0.76).
+- **Product pages:** each doubling of the number of product pages viewed
+  (for example, from 4 to 8 pages) is associated with about 14% higher
+  odds of a purchase.
+- **Informational pages** are associated with slightly higher odds of a
+  purchase. The association for administrative pages is small and its
+  confidence interval includes 1.
+- **New visitors** had about 54% higher odds of a purchase than
   returning visitors.
 - Compared with May, sessions in **November** had about twice the odds
   of a purchase, and sessions in **February** and **March** had lower
@@ -348,6 +355,131 @@ Holding the other predictors constant:
 These are associations in observational data. They do not show that
 changing any of these characteristics would change the likelihood of a
 purchase.
+
+### 4.2 Model checks
+
+**Overlap between predictors.** If predictors are strongly related to
+each other, the model cannot separate their associations and the
+estimates become unstable. The generalised variance inflation factor
+(GVIF) measures this. The last column below is adjusted for predictors
+with several categories and can be compared across all predictors;
+values below about 2 indicate no concern.
+
+``` r
+library(car)
+vif(model_main) |>
+  knitr::kable(digits = 2)
+```
+
+|                     | GVIF |  Df | GVIF^(1/(2\*Df)) |
+|:--------------------|-----:|----:|-----------------:|
+| Administrative      | 1.30 |   1 |             1.14 |
+| Informational       | 1.21 |   1 |             1.10 |
+| ProductRelated_log2 | 1.57 |   1 |             1.25 |
+| ExitRates_pct       | 1.25 |   1 |             1.12 |
+| SpecialDay          | 1.20 |   1 |             1.10 |
+| Month               | 1.33 |   9 |             1.02 |
+| VisitorType         | 1.28 |   2 |             1.06 |
+| Weekend             | 1.01 |   1 |             1.01 |
+
+All values are close to 1, so overlap between the predictors is not a
+concern.
+
+**Straight-line relationship on the log-odds scale.** Logistic
+regression assumes that each numeric predictor has a straight-line
+relationship with the log-odds of a purchase. To check this for the two
+main numeric predictors, sessions are divided into ten equal-sized
+groups by the value of the predictor, and the observed log-odds of a
+purchase in each group is plotted against the group’s average value.
+Points that lie close to a straight line support the assumption.
+
+``` r
+model_data |>
+  # Put the two predictors in one column so they can be drawn side by side
+  pivot_longer(c(ProductRelated_log2, ExitRates_pct), names_to = "Predictor", values_to = "value") |>
+  # Split the sessions into ten equal-sized groups for each predictor
+  group_by(Predictor) |>
+  mutate(group = ntile(value, 10)) |>
+  # Average value and observed purchase rate in each group
+  group_by(Predictor, group) |>
+  summarise(mean_value = mean(value), purchase_rate = mean(Revenue), .groups = "drop") |>
+  # Convert the purchase rate to log-odds
+  mutate(log_odds = log(purchase_rate / (1 - purchase_rate))) |>
+  ggplot(aes(x = mean_value, y = log_odds)) +
+  # Straight reference line through the points
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE, colour = "grey60", linewidth = 0.6) +
+  geom_point(colour = "#2a78d6", size = 2.5) +
+  facet_wrap(~ Predictor, scales = "free_x") +
+  labs(title = "Figure 3. Observed log-odds of purchase across ten groups of each predictor",
+       x = "Average value in group", y = "Log-odds of purchase") +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank())
+```
+
+![](analysis_files/figure-gfm/check-linearity-1.png)<!-- -->
+
+For exit rate, the points follow a downward trend that is close to
+straight, with some curvature: the log-odds fall most steeply at low to
+moderate exit rates. For product pages on the log scale, the points rise
+in a roughly straight line, with a flatter section in the upper middle
+groups. Neither pattern is perfectly straight, so the estimates for
+these two predictors are best read as average associations across the
+range of values observed. When product pages were entered without the
+log transformation, the pattern was clearly curved, and the model fitted
+the data less well (AIC 9,329 compared with 9,310), which is why the log
+scale is used.
+
+**Influential sessions.** Cook’s distance measures how much the model’s
+estimates would change if a single session were removed. Values above 1
+are usually treated as a concern.
+
+``` r
+max(cooks.distance(model_main))
+```
+
+    ## [1] 0.02065133
+
+The largest value is far below 1, so no single session has a large
+influence on the results.
+
+**How well the model fits.** Two summaries are used. McFadden’s pseudo
+R² compares the model with a model that has no predictors; values
+between 0.1 and 0.2 are typical for models of individual behaviour. The
+area under the ROC curve (AUC) is the probability that the model gives a
+randomly chosen purchase session a higher predicted probability than a
+randomly chosen non-purchase session, where 0.5 is no better than chance
+and 1 is perfect separation.
+
+``` r
+# Predicted probability of a purchase for every session
+predicted <- fitted(model_main)
+purchased <- model_data$Revenue
+
+# McFadden's pseudo R-squared
+mcfadden_r2 <- 1 - model_main$deviance / model_main$null.deviance
+
+# AUC, calculated from the ranks of the predicted probabilities
+n_purchase <- sum(purchased)
+n_no_purchase <- sum(!purchased)
+ranks <- rank(predicted)
+auc <- (sum(ranks[purchased]) - n_purchase * (n_purchase + 1) / 2) / (n_purchase * n_no_purchase)
+
+tibble(`McFadden pseudo R²` = mcfadden_r2, AUC = auc) |>
+  knitr::kable(digits = 3)
+```
+
+| McFadden pseudo R² |   AUC |
+|-------------------:|------:|
+|              0.127 | 0.746 |
+
+The model separates purchase and non-purchase sessions moderately well
+(AUC 0.75). Because only 15.5% of sessions end in a purchase, the model
+rarely predicts a probability above 0.5, so a simple “purchase or not”
+classification at that cut-off would label almost every session as no
+purchase. For this reason, the AUC is a more informative summary than
+classification accuracy here. Overall, the browsing measures in the
+model account for part, but far from all, of the difference between
+sessions that end in a purchase and those that do not.
 
 ## References
 
