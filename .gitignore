@@ -1,0 +1,10 @@
+# macOS folder settings file
+.DS_Store
+
+# Machine-specific R settings (points to this computer's copy of pandoc)
+.Renviron
+
+# R and RStudio session files
+.Rhistory
+.RData
+.Rproj.user/
