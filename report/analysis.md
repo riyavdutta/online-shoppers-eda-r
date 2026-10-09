@@ -15,6 +15,8 @@ Riya Dutta
 - [4. Logistic regression](#4-logistic-regression)
   - [4.1 Main model](#41-main-model)
   - [4.2 Model checks](#42-model-checks)
+  - [4.3 Comparison model including page
+    value](#43-comparison-model-including-page-value)
 - [References](#references)
 
 ## 1. Introduction
@@ -451,20 +453,24 @@ randomly chosen non-purchase session, where 0.5 is no better than chance
 and 1 is perfect separation.
 
 ``` r
-# Predicted probability of a purchase for every session
-predicted <- fitted(model_main)
-purchased <- model_data$Revenue
-
-# McFadden's pseudo R-squared
-mcfadden_r2 <- 1 - model_main$deviance / model_main$null.deviance
+# McFadden's pseudo R-squared, written as a function so it can be reused for any model
+calc_mcfadden_r2 <- function(model) {
+  1 - model$deviance / model$null.deviance
+}
 
 # AUC, calculated from the ranks of the predicted probabilities
-n_purchase <- sum(purchased)
-n_no_purchase <- sum(!purchased)
-ranks <- rank(predicted)
-auc <- (sum(ranks[purchased]) - n_purchase * (n_purchase + 1) / 2) / (n_purchase * n_no_purchase)
+calc_auc <- function(model) {
+  predicted <- fitted(model)  # predicted probability of a purchase for every session
+  purchased <- model$y == 1   # whether each session actually ended in a purchase
+  n_purchase <- sum(purchased)
+  n_no_purchase <- sum(!purchased)
+  ranks <- rank(predicted)
+  (sum(ranks[purchased]) - n_purchase * (n_purchase + 1) / 2) / (n_purchase * n_no_purchase)
+}
 
-tibble(`McFadden pseudo R²` = mcfadden_r2, AUC = auc) |>
+auc <- calc_auc(model_main)
+
+tibble(`McFadden pseudo R²` = calc_mcfadden_r2(model_main), AUC = auc) |>
   knitr::kable(digits = 3)
 ```
 
@@ -480,6 +486,81 @@ purchase. For this reason, the AUC is a more informative summary than
 classification accuracy here. Overall, the browsing measures in the
 model account for part, but far from all, of the difference between
 sessions that end in a purchase and those that do not.
+
+### 4.3 Comparison model including page value
+
+Page value was left out of the main model because it is partly
+calculated from completed purchases. To show how much this choice
+matters, a second model adds page value to the main model. Like product
+pages, page value is very right-skewed, so it enters on a log scale
+(base 2).
+
+``` r
+# Add page value on a log2 scale (1 is added so that sessions with a value of 0 can be included)
+model_data <- model_data |>
+  mutate(PageValues_log2 = log2(PageValues + 1))
+
+# Same predictors as the main model, plus page value
+model_pagevalue <- glm(
+  Revenue ~ Administrative + Informational + ProductRelated_log2 + ExitRates_pct +
+    SpecialDay + Month + VisitorType + Weekend + PageValues_log2,
+  family = binomial,
+  data = model_data
+)
+
+# Compare how well the two models fit
+tibble(
+  Model = c("Main model", "Main model + page value"),
+  AIC = round(c(AIC(model_main), AIC(model_pagevalue))),
+  `McFadden pseudo R²` = c(calc_mcfadden_r2(model_main), calc_mcfadden_r2(model_pagevalue)),
+  AUC = c(calc_auc(model_main), calc_auc(model_pagevalue))
+) |>
+  knitr::kable(digits = 3)
+```
+
+| Model                   |  AIC | McFadden pseudo R² |   AUC |
+|:------------------------|-----:|-------------------:|------:|
+| Main model              | 9310 |              0.127 | 0.746 |
+| Main model + page value | 6200 |              0.420 | 0.917 |
+
+``` r
+# Odds ratios from both models side by side (months are left out to keep the table short)
+bind_rows(
+  tidy(model_main, exponentiate = TRUE) |> mutate(Model = "Main model"),
+  tidy(model_pagevalue, exponentiate = TRUE) |> mutate(Model = "Main model + page value")
+) |>
+  filter(term != "(Intercept)", !str_starts(term, "Month")) |>
+  select(Predictor = term, Model, estimate) |>
+  pivot_wider(names_from = Model, values_from = estimate) |>
+  knitr::kable(digits = 2)
+```
+
+| Predictor              | Main model | Main model + page value |
+|:-----------------------|-----------:|------------------------:|
+| Administrative         |       1.01 |                    0.95 |
+| Informational          |       1.05 |                    1.03 |
+| ProductRelated_log2    |       1.14 |                    1.09 |
+| ExitRates_pct          |       0.76 |                    0.88 |
+| SpecialDay             |       0.48 |                    0.98 |
+| VisitorTypeNew_Visitor |       1.54 |                    1.91 |
+| VisitorTypeOther       |       2.18 |                    1.38 |
+| WeekendTRUE            |       1.03 |                    1.10 |
+| PageValues_log2        |            |                    2.18 |
+
+Adding page value greatly improves the fit (AUC 0.92 compared with
+0.75), and page value has by far the strongest association with
+purchasing. This is expected, because page value is built from
+information about completed transactions. Adding it also changes several
+other estimates: the association with exit rate becomes weaker, the
+association with special days disappears, and the association with being
+a new visitor becomes stronger. These changes suggest that page value
+absorbs much of the information carried by the browsing measures, rather
+than adding an independent behavioural explanation.
+
+For these reasons, the main model is used to describe how browsing
+behaviour relates to purchasing. The comparison model shows that page
+value would make a stronger predictive model, but its estimates are
+harder to interpret as patterns of browsing behaviour.
 
 ## References
 
