@@ -48,7 +48,6 @@ online-shoppers-eda-r/
 │   ├── analysis.md                Rendered report (readable directly on GitHub)
 │   └── analysis_files/            Figures used by the rendered report
 ├── online-shoppers-eda-r.Rproj    RStudio project file
-├── CLAUDE.md                      Project rules followed when working with an AI coding assistant
 └── README.md
 ```
 

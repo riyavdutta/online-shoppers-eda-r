@@ -4,6 +4,9 @@
 # Machine-specific R settings (points to this computer's copy of pandoc)
 .Renviron
 
+# Instructions for the AI coding assistant (kept locally only)
+CLAUDE.md
+
 # Processed data (recreated by running scripts/02_clean.R)
 data/processed/
 
