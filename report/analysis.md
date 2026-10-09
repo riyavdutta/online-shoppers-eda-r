@@ -11,6 +11,7 @@ Riya Dutta
     outcome](#31-browsing-behaviour-by-purchase-outcome)
   - [3.2 Purchase rate by visitor
     characteristics](#32-purchase-rate-by-visitor-characteristics)
+  - [3.3 Visualising the differences](#33-visualising-the-differences)
 - [References](#references)
 
 ## 1. Introduction
@@ -156,6 +157,80 @@ weekday sessions (14.9%). Purchase rates varied by month, from 1.6% in
 February to 25.4% in November. The number of sessions also differs
 widely between months, and January and April are absent from the data,
 so monthly patterns should be read with caution.
+
+### 3.3 Visualising the differences
+
+Figure 1 shows the distribution of three browsing measures for each
+outcome. The vertical axes use a log(1 + x) scale, which spreads out the
+many small values and compresses the few very large ones, so that both
+groups can be compared on the same plot. Exit rates are on a much
+smaller scale and are summarised in the table in Section 3.1.
+
+``` r
+# Colours used for the two outcomes in all figures
+outcome_colours <- c("No purchase" = "#2a78d6", "Purchase" = "#eb6834")
+
+shoppers |>
+  mutate(Outcome = if_else(Revenue, "Purchase", "No purchase")) |>
+  # Reshape so that the three measures can be drawn side by side
+  pivot_longer(c(ProductRelated, ProductRelated_Duration, PageValues),
+               names_to = "Measure", values_to = "value") |>
+  mutate(Measure = fct_inorder(Measure)) |>
+  # One box plot per outcome, coloured by outcome
+  ggplot(aes(x = Outcome, y = value, fill = Outcome)) +
+  geom_boxplot(width = 0.5, outlier.size = 0.6, outlier.alpha = 0.2) +
+  # One panel per measure, each with its own vertical scale
+  facet_wrap(~ Measure, nrow = 1, scales = "free_y") +
+  # Log(1 + x) scale, with axis marks at 0, 1, 10, 100, 1,000 and 10,000
+  scale_y_continuous(transform = "log1p", breaks = c(0, 1, 10, 100, 1000, 10000),
+                     labels = scales::label_comma()) +
+  scale_fill_manual(values = outcome_colours) +
+  labs(title = "Figure 1. Browsing measures by purchase outcome",
+       x = NULL, y = "Value (log(1 + x) scale)") +
+  theme_minimal() +
+  # No legend (the horizontal axis already names each outcome) and no minor gridlines
+  theme(legend.position = "none", panel.grid.minor = element_blank())
+```
+
+![](analysis_files/figure-gfm/fig-browsing-1.png)<!-- -->
+
+Purchase sessions tend to include more product pages and more time on
+them, although the two distributions overlap considerably. The contrast
+is much sharper for `PageValues`: most sessions without a purchase have
+a page value of zero, whereas most purchase sessions have a positive
+value, consistent with the way this measure is calculated.
+
+Figure 2 shows the purchase rate in each month. The dashed line marks
+the rate across all sessions.
+
+``` r
+# Purchase rate across all sessions, used for the reference line
+overall_rate <- mean(shoppers$Revenue)
+
+shoppers |>
+  group_by(Month) |>
+  summarise(purchase_rate = mean(Revenue)) |>
+  # One bar per month
+  ggplot(aes(x = Month, y = purchase_rate)) +
+  geom_col(fill = "#2a78d6", width = 0.6) +
+  # Reference line and its label
+  geom_hline(yintercept = overall_rate, linetype = "dashed", colour = "grey40") +
+  annotate("text", x = 0.6, y = overall_rate, vjust = -0.6, hjust = 0, size = 3.5,
+           colour = "grey30", label = paste0("All sessions: ", round(overall_rate * 100, 1), "%")) +
+  scale_y_continuous(labels = scales::label_percent()) +
+  labs(title = "Figure 2. Purchase rate by month", x = NULL, y = "Purchase rate") +
+  theme_minimal() +
+  # Keep only the horizontal gridlines
+  theme(panel.grid.minor = element_blank(), panel.grid.major.x = element_blank())
+```
+
+![](analysis_files/figure-gfm/fig-month-1.png)<!-- -->
+
+Purchase rates were below the overall rate from February to June and
+above it from August to November, peaking in November. As noted above,
+months differ greatly in their number of sessions, so this pattern
+describes this particular sample and may not reflect seasonal behaviour
+in general.
 
 ## References
 

@@ -36,7 +36,8 @@ online-shoppers-eda-r/
 │   └── 02_clean.R                 Sets correct column types and saves the cleaned data
 ├── report/
 │   ├── analysis.Rmd               R Markdown source of the report
-│   └── analysis.md                Rendered report (readable directly on GitHub)
+│   ├── analysis.md                Rendered report (readable directly on GitHub)
+│   └── analysis_files/            Figures used by the rendered report
 ├── online-shoppers-eda-r.Rproj    RStudio project file
 └── README.md
 ```
