@@ -12,6 +12,8 @@ Riya Dutta
   - [3.2 Purchase rate by visitor
     characteristics](#32-purchase-rate-by-visitor-characteristics)
   - [3.3 Visualising the differences](#33-visualising-the-differences)
+- [4. Logistic regression](#4-logistic-regression)
+  - [4.1 Main model](#41-main-model)
 - [References](#references)
 
 ## 1. Introduction
@@ -231,6 +233,121 @@ above it from August to November, peaking in November. As noted above,
 months differ greatly in their number of sessions, so this pattern
 describes this particular sample and may not reflect seasonal behaviour
 in general.
+
+## 4. Logistic regression
+
+### 4.1 Main model
+
+A logistic regression models the probability that a session ends in a
+purchase as a function of several session characteristics at once. Each
+estimate describes the association between one characteristic and the
+outcome while the other characteristics in the model are held constant.
+
+The predictors were chosen as follows:
+
+- **Page counts** for administrative, informational and product pages
+  are included. The matching duration measures are left out, because
+  they overlap strongly with the counts (for product pages, the
+  correlation between count and duration is 0.86), and including both
+  would make the estimates unstable.
+- **Exit rate** is included and **bounce rate** is left out, because the
+  two are very highly correlated (0.91).
+- **Special day, month, visitor type and weekend** are included.
+- **Operating system, browser, region and traffic type** are left out.
+  They are anonymised technical codes with many small categories and no
+  clear behavioural interpretation.
+- **Page value** is left out of the main model, because it is partly
+  calculated from completed purchases (Section 3.1). Section 4.3
+  compares a model that includes it.
+
+Two predictors are rescaled so that their estimates are easier to read:
+product pages are counted in units of 10 pages, and exit rate is
+expressed in percentage points. The reference groups for the categorical
+predictors are May and returning visitors, the largest group in each
+case.
+
+``` r
+# Prepare the data for the model
+model_data <- shoppers |>
+  mutate(
+    # Product pages in units of 10, and exit rate in percentage points
+    ProductRelated_10 = ProductRelated / 10,
+    ExitRates_pct = ExitRates * 100,
+    # Compare each month with May, and each visitor type with returning visitors
+    Month = fct_relevel(Month, "May"),
+    VisitorType = fct_relevel(VisitorType, "Returning_Visitor")
+  )
+
+# Fit the logistic regression (family = binomial means the outcome is TRUE or FALSE)
+model_main <- glm(
+  Revenue ~ Administrative + Informational + ProductRelated_10 + ExitRates_pct +
+    SpecialDay + Month + VisitorType + Weekend,
+  family = binomial,
+  data = model_data
+)
+
+# Turn the results into a table of odds ratios with 95% confidence intervals
+library(broom)
+tidy(model_main, exponentiate = TRUE, conf.int = TRUE) |>
+  filter(term != "(Intercept)") |>
+  transmute(
+    Predictor = term,
+    `Odds ratio` = estimate,
+    `95% CI lower` = conf.low,
+    `95% CI upper` = conf.high,
+    `p-value` = scales::label_pvalue()(p.value)
+  ) |>
+  knitr::kable(digits = 2)
+```
+
+| Predictor              | Odds ratio | 95% CI lower | 95% CI upper | p-value |
+|:-----------------------|-----------:|-------------:|-------------:|:--------|
+| Administrative         |       1.01 |         1.00 |         1.03 | 0.069   |
+| Informational          |       1.06 |         1.02 |         1.10 | 0.004   |
+| ProductRelated_10      |       1.02 |         1.01 |         1.03 | \<0.001 |
+| ExitRates_pct          |       0.74 |         0.71 |         0.76 | \<0.001 |
+| SpecialDay             |       0.50 |         0.32 |         0.75 | 0.001   |
+| MonthFeb               |       0.21 |         0.05 |         0.55 | 0.007   |
+| MonthMar               |       0.75 |         0.61 |         0.91 | 0.004   |
+| MonthJun               |       0.89 |         0.58 |         1.34 | 0.603   |
+| MonthJul               |       1.29 |         0.95 |         1.73 | 0.100   |
+| MonthAug               |       1.27 |         0.95 |         1.69 | 0.099   |
+| MonthSep               |       1.30 |         0.99 |         1.71 | 0.059   |
+| MonthOct               |       1.42 |         1.11 |         1.82 | 0.005   |
+| MonthNov               |       2.09 |         1.79 |         2.44 | \<0.001 |
+| MonthDec               |       0.89 |         0.73 |         1.08 | 0.255   |
+| VisitorTypeNew_Visitor |       1.42 |         1.24 |         1.62 | \<0.001 |
+| VisitorTypeOther       |       1.94 |         1.03 |         3.46 | 0.031   |
+| WeekendTRUE            |       1.04 |         0.92 |         1.17 | 0.562   |
+
+An odds ratio above 1 means that higher values of the predictor (or
+membership of the group, compared with the reference group) are
+associated with higher odds of a purchase, and an odds ratio below 1
+means lower odds. The 95% confidence interval shows the range of values
+compatible with the data; an interval that does not include 1 indicates
+an association that is unlikely to be due to chance alone.
+
+Holding the other predictors constant:
+
+- **Exit rate** shows the strongest association. Each additional
+  percentage point in the average exit rate of the pages visited is
+  associated with about 26% lower odds of a purchase (odds ratio 0.74).
+- **Product pages** and **informational pages** are both associated with
+  slightly higher odds of a purchase. The association for administrative
+  pages is small and its confidence interval includes 1.
+- **New visitors** had about 42% higher odds of a purchase than
+  returning visitors.
+- Compared with May, sessions in **November** had about twice the odds
+  of a purchase, and sessions in **February** and **March** had lower
+  odds. The February estimate is based on only three purchases, which is
+  reflected in its very wide confidence interval.
+- Sessions closer to a **special day** had lower odds of a purchase.
+- There was no clear difference between **weekend** and weekday sessions
+  once the other predictors were taken into account.
+
+These are associations in observational data. They do not show that
+changing any of these characteristics would change the likelihood of a
+purchase.
 
 ## References
 
