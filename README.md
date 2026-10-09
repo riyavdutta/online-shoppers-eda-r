@@ -29,9 +29,14 @@ The data are observational. Results describe associations between browsing behav
 ```
 online-shoppers-eda-r/
 ├── data/
-│   └── raw/          Original dataset (unchanged)
+│   └── raw/                       Original dataset (unchanged)
+├── scripts/
+│   └── 01_import_and_inspect.R    Reads the raw data and checks its structure
+├── online-shoppers-eda-r.Rproj    RStudio project file
 └── README.md
 ```
+
+Open `online-shoppers-eda-r.Rproj` in RStudio before running any script, so that file paths resolve from the project folder.
 
 ## Reproducibility
 
