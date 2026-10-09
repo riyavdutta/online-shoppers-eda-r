@@ -4,6 +4,8 @@
 
 This project examines how visitors browse an online shop and which browsing behaviours are associated with completing a purchase. It combines exploratory data analysis with a logistic regression model, and is written in R.
 
+**Read the full report:** [report/analysis.md](report/analysis.md)
+
 ## Aims
 
 1. Describe how browsing behaviour, such as the pages visited and the time spent on them, differs between sessions that end in a purchase and sessions that do not.
@@ -18,11 +20,18 @@ The raw data file is stored unchanged in `data/raw/online_shoppers_intention.csv
 ## Methods
 
 - **Exploratory data analysis:** summary statistics and visualisations of browsing behaviour, compared across purchasing and non-purchasing sessions.
-- **Logistic regression:** a model of the probability of purchase, with diagnostic checks of model assumptions.
+- **Logistic regression:** a model of the probability of purchase based on page counts, exit rate, proximity to a special day, month, visitor type and weekend. Product pages enter on a log scale.
+- **Model checks:** overlap between predictors (variance inflation factors), the straight-line assumption on the log-odds scale, influential sessions (Cook's distance), and model fit (McFadden's pseudo R² and AUC).
+- **Comparison model:** the Google Analytics page value measure is partly calculated from completed purchases, so it is excluded from the main model and examined in a separate comparison model.
 
-## Interpretation
+## Key findings
 
-The data are observational. Results describe associations between browsing behaviour and purchasing and should not be interpreted as causal effects.
+- Sessions that ended in a purchase tended to involve more product pages and pages with lower exit rates.
+- Holding the other predictors constant, each doubling of product pages viewed was associated with about 14% higher odds of a purchase, and each percentage point increase in exit rate with about 24% lower odds.
+- New visitors had about 54% higher odds of a purchase than returning visitors, and purchase rates were highest in November.
+- The main model separated purchase and non-purchase sessions moderately well (AUC 0.75). Adding page value raised the AUC to 0.92, but mainly because that measure is partly derived from purchases.
+
+The data are observational. These results describe associations between browsing behaviour and purchasing and should not be interpreted as causal effects. Further limitations are discussed in the report.
 
 ## Repository structure
 
@@ -39,6 +48,7 @@ online-shoppers-eda-r/
 │   ├── analysis.md                Rendered report (readable directly on GitHub)
 │   └── analysis_files/            Figures used by the rendered report
 ├── online-shoppers-eda-r.Rproj    RStudio project file
+├── CLAUDE.md                      Project rules followed when working with an AI coding assistant
 └── README.md
 ```
 
