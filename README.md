@@ -29,7 +29,7 @@ The raw data file is stored unchanged in `data/raw/online_shoppers_intention.csv
 - Sessions that ended in a purchase tended to involve more product pages and pages with lower exit rates.
 - Holding the other predictors constant, each doubling of product pages viewed was associated with about 14% higher odds of a purchase, and each percentage point increase in exit rate with about 24% lower odds.
 - New visitors had about 54% higher odds of a purchase than returning visitors, and purchase rates were highest in November.
-- The main model separated purchase and non-purchase sessions moderately well (AUC 0.75). Adding page value raised the AUC to 0.92, but mainly because that measure is partly derived from purchases.
+- The main model separated purchase and non-purchase sessions moderately well (AUC 0.75). Adding page value raised the AUC to 0.92, but page value is partly derived from purchases, so this gain says little about browsing behaviour itself.
 
 The data are observational. These results describe associations between browsing behaviour and purchasing and should not be interpreted as causal effects. Further limitations are discussed in the report.
 
@@ -57,7 +57,7 @@ Open `online-shoppers-eda-r.Rproj` in RStudio before running any script, so that
 
 Requirements:
 
-- R 4.5.2 or later
+- R (tested with version 4.5.2)
 - R packages: `tidyverse`, `broom`, `car`, `rmarkdown`, `knitr`
 - pandoc, for rendering reports (included with RStudio)
 

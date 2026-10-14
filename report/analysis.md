@@ -2,7 +2,7 @@ Online Shoppers Purchasing Intention: Exploratory Analysis and Logistic
 Regression
 ================
 Riya Dutta
-09 October 2026
+14 October 2026
 
 - [1. Introduction](#1-introduction)
 - [2. Data](#2-data)
@@ -38,10 +38,10 @@ purchase.
 | Variable | Description |
 |----|----|
 | `Administrative`, `Informational`, `ProductRelated` | Number of pages of each type visited in the session |
-| `Administrative_Duration`, `Informational_Duration`, `ProductRelated_Duration` | Total time spent on each page type, in seconds |
-| `BounceRates` | Average bounce rate of the pages visited (share of visitors who entered on that page and left without further interaction) |
-| `ExitRates` | Average exit rate of the pages visited (share of page views that were the last in a session) |
-| `PageValues` | Average Google Analytics page value of the pages visited, which is calculated from pages that preceded completed transactions |
+| `Administrative_Duration`, `Informational_Duration`, `ProductRelated_Duration` | Total time spent on each page type (the dataset documentation does not state the unit) |
+| `BounceRates` | Google Analytics bounce rate of the pages visited (share of visitors who entered the site on a page and left without any further interaction) |
+| `ExitRates` | Google Analytics exit rate of the pages visited (share of a page’s views that were the last in a session) |
+| `PageValues` | Google Analytics page value of the pages visited, which reflects the value of pages that users visited before completing a transaction |
 | `SpecialDay` | Closeness of the visit date to a special day such as Valentine’s Day, from 0 (not close) to 1 |
 | `Month` | Month of the visit |
 | `OperatingSystems`, `Browser`, `Region`, `TrafficType` | Category codes for the visitor’s technology, location and traffic source |
@@ -50,8 +50,10 @@ purchase.
 | `Revenue` | Whether the session ended in a purchase (outcome) |
 
 The data are prepared by `scripts/02_clean.R`, which sets the correct
-variable types. The 125 duplicate rows are kept, because they are
-consistent with separate very short visits rather than recording errors.
+variable types. The 125 duplicate rows are kept. All of them describe
+one or two product pages with no recorded time and no purchase, which is
+consistent with separate, very short visits, and there is no evidence
+that they are recording errors.
 
 ``` r
 # Load the tidyverse and create the cleaned table called shoppers
@@ -337,9 +339,10 @@ an association that is unlikely to be due to chance alone.
 
 Holding the other predictors constant:
 
-- **Exit rate** shows the strongest association. Each additional
-  percentage point in the average exit rate of the pages visited is
-  associated with about 24% lower odds of a purchase (odds ratio 0.76).
+- **Exit rate** has the largest test statistic in the model, so it is
+  the association with the strongest statistical evidence. Each
+  additional percentage point in exit rate is associated with about 24%
+  lower odds of a purchase (odds ratio 0.76).
 - **Product pages:** each doubling of the number of product pages viewed
   (for example, from 4 to 8 pages) is associated with about 14% higher
   odds of a purchase.
@@ -366,8 +369,8 @@ purchase.
 each other, the model cannot separate their associations and the
 estimates become unstable. The generalised variance inflation factor
 (GVIF) measures this. The last column below is adjusted for predictors
-with several categories and can be compared across all predictors;
-values below about 2 indicate no concern.
+with several categories and can be compared across all predictors; a
+common rule of thumb treats values below about 2 as no concern.
 
 ``` r
 library(car)
@@ -434,8 +437,8 @@ the data less well (AIC 9,329 compared with 9,310), which is why the log
 scale is used.
 
 **Influential sessions.** Cook’s distance measures how much the model’s
-estimates would change if a single session were removed. Values above 1
-are usually treated as a concern.
+estimates would change if a single session were removed. A common rule
+of thumb treats values above 1 as a concern.
 
 ``` r
 max(cooks.distance(model_main))
@@ -447,12 +450,14 @@ The largest value is far below 1, so no single session has a large
 influence on the results.
 
 **How well the model fits.** Two summaries are used. McFadden’s pseudo
-R² compares the model with a model that has no predictors; values
-between 0.1 and 0.2 are typical for models of individual behaviour. The
-area under the ROC curve (AUC) is the probability that the model gives a
-randomly chosen purchase session a higher predicted probability than a
-randomly chosen non-purchase session, where 0.5 is no better than chance
-and 1 is perfect separation.
+R² compares the model with a model that has no predictors, where 0 means
+no improvement and higher values mean a better fit. It is not the same
+as the R² of linear regression and tends to be considerably lower, so
+the two should not be compared directly. The area under the ROC curve
+(AUC) is the probability that the model gives a randomly chosen purchase
+session a higher predicted probability than a randomly chosen
+non-purchase session, where 0.5 is no better than chance and 1 is
+perfect separation.
 
 ``` r
 # McFadden's pseudo R-squared, written as a function so it can be reused for any model
@@ -550,14 +555,15 @@ bind_rows(
 | PageValues_log2        |            |                    2.18 |
 
 Adding page value greatly improves the fit (AUC 0.92 compared with
-0.75), and page value has by far the strongest association with
-purchasing. This is expected, because page value is built from
-information about completed transactions. Adding it also changes several
-other estimates: the association with exit rate becomes weaker, the
+0.75), and page value has by far the largest test statistic of any
+predictor. This is expected, because page value reflects information
+about completed transactions. Adding it also changes several other
+estimates: the association with exit rate becomes weaker, the
 association with special days disappears, and the association with being
-a new visitor becomes stronger. These changes suggest that page value
-absorbs much of the information carried by the browsing measures, rather
-than adding an independent behavioural explanation.
+a new visitor becomes stronger. Once page value is in the model, the
+other estimates compare sessions with similar page values, so they
+describe something different from the main model and are harder to
+interpret as general patterns of browsing behaviour.
 
 For these reasons, the main model is used to describe how browsing
 behaviour relates to purchasing. The comparison model shows that page
